@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #1A6B4A;
+  --color-primary-dark: #145538;
+  --color-primary-light: #E8F5ED;
+  --color-background: #F7F5F0;
+  --color-surface: #FFFFFF;
+  --color-text-dark: #1A3A2A;
+  --color-text-mid: #4A7A5A;
+  --color-text-muted: #6B8A78;
+  --color-border: #DDD8CF;
+  --color-urgency-green: #2D7A3A;
+  --color-urgency-yellow: #E07B00;
+  --color-urgency-red: #CC2929;
+  --color-emergency: #CC2929;
+  --font-sans: 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', sans-serif;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-text-dark);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Low bandwidth mode — strip images */
+.low-bandwidth img:not(.essential) { display: none !important; }
+
+/* Skeleton animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e8e4dc 25%, #f0ece4 50%, #e8e4dc 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* Leaflet fix */
+.leaflet-container { height: 300px; width: 100%; border-radius: 12px; }
