@@ -10,6 +10,8 @@ from fastapi.responses import JSONResponse
 
 from app.config import settings
 from app.routers import auth, patient, doctor, pharmacy, appointments, ai, content
+from app.routers import admin
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -57,6 +59,7 @@ app.include_router(pharmacy.router, prefix="/api/v1/pharmacy")
 app.include_router(appointments.router, prefix="/api/v1/appointments")
 app.include_router(ai.router, prefix="/api/v1/ai")
 app.include_router(content.router, prefix="/api/v1/content")
+app.include_router(admin.router, prefix="/api/v1/admin")
 
 
 @app.exception_handler(Exception)
