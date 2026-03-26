@@ -27,56 +27,90 @@ def _success(data, message="Success"):
 @router.get("/search")
 async def search_pharmacies(
     medicine: str = Query(..., min_length=2),
-    lat: float = Query(...),
-    lng: float = Query(...),
+    lat: float = Query(None),
+    lng: float = Query(None),
     radius_km: float = Query(20, ge=1, le=100),
     in_stock: bool = Query(True),
     db: AsyncSession = Depends(get_db),
 ):
-    """Public PostGIS geospatial pharmacy search with trigram matching."""
-    radius_meters = radius_km * 1000
+    """Public pharmacy search — PostGIS geospatial when location provided, national otherwise."""
+    if lat and lng:
+        radius_meters = radius_km * 1000
+        query = text("""
+            SELECT
+                p.id as pharmacy_id,
+                p.pharmacy_name,
+                p.address,
+                p.phone,
+                p.is_open_now,
+                mi.id as medicine_id,
+                mi.medicine_name,
+                mi.generic_name,
+                mi.quantity_in_stock,
+                mi.price_per_unit,
+                mi.requires_prescription,
+                mi.last_updated,
+                ST_Distance(
+                    p.location,
+                    ST_MakePoint(:lng, :lat)::geography
+                ) AS dist_meters
+            FROM pharmacy_profiles p
+            JOIN medicine_inventory mi ON mi.pharmacy_id = p.id
+            WHERE p.is_approved = true
+              AND ST_DWithin(
+                    p.location,
+                    ST_MakePoint(:lng, :lat)::geography,
+                    :radius_meters
+              )
+              AND (
+                  similarity(mi.medicine_name, :medicine) > 0.2
+                  OR mi.medicine_name ILIKE '%' || :medicine || '%'
+                  OR mi.generic_name ILIKE '%' || :medicine || '%'
+              )
+              AND (:in_stock = false OR mi.quantity_in_stock > 0)
+            ORDER BY dist_meters
+            LIMIT 20
+        """)
+        result = await db.execute(query, {
+            "lat": lat, "lng": lng,
+            "medicine": medicine,
+            "radius_meters": radius_meters,
+            "in_stock": in_stock,
+        })
+    else:
+        # National search without location
+        query = text("""
+            SELECT
+                p.id as pharmacy_id,
+                p.pharmacy_name,
+                p.address,
+                p.phone,
+                p.is_open_now,
+                mi.id as medicine_id,
+                mi.medicine_name,
+                mi.generic_name,
+                mi.quantity_in_stock,
+                mi.price_per_unit,
+                mi.requires_prescription,
+                mi.last_updated,
+                0 AS dist_meters
+            FROM pharmacy_profiles p
+            JOIN medicine_inventory mi ON mi.pharmacy_id = p.id
+            WHERE p.is_approved = true
+              AND (
+                  similarity(mi.medicine_name, :medicine) > 0.2
+                  OR mi.medicine_name ILIKE '%' || :medicine || '%'
+                  OR mi.generic_name ILIKE '%' || :medicine || '%'
+              )
+              AND (:in_stock = false OR mi.quantity_in_stock > 0)
+            ORDER BY mi.medicine_name
+            LIMIT 20
+        """)
+        result = await db.execute(query, {
+            "medicine": medicine,
+            "in_stock": in_stock,
+        })
 
-    query = text("""
-        SELECT
-            p.id as pharmacy_id,
-            p.pharmacy_name,
-            p.address,
-            p.phone,
-            p.is_open_now,
-            mi.id as medicine_id,
-            mi.medicine_name,
-            mi.generic_name,
-            mi.quantity_in_stock,
-            mi.price_per_unit,
-            mi.requires_prescription,
-            mi.last_updated,
-            ST_Distance(
-                p.location,
-                ST_MakePoint(:lng, :lat)::geography
-            ) AS dist_meters
-        FROM pharmacy_profiles p
-        JOIN medicine_inventory mi ON mi.pharmacy_id = p.id
-        WHERE p.is_approved = true
-          AND ST_DWithin(
-                p.location,
-                ST_MakePoint(:lng, :lat)::geography,
-                :radius_meters
-          )
-          AND (
-              mi.medicine_name ILIKE '%' || :medicine || '%'
-              OR mi.generic_name ILIKE '%' || :medicine || '%'
-          )
-          AND (:in_stock = false OR mi.quantity_in_stock > 0)
-        ORDER BY dist_meters
-        LIMIT 20
-    """)
-
-    result = await db.execute(query, {
-        "lat": lat, "lng": lng,
-        "medicine": medicine,
-        "radius_meters": radius_meters,
-        "in_stock": in_stock,
-    })
     rows = result.fetchall()
 
     items = []

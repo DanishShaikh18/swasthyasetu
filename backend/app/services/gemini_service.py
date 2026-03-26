@@ -13,7 +13,7 @@ try:
     if settings.GEMINI_API_KEY:
         import google.generativeai as genai
         genai.configure(api_key=settings.GEMINI_API_KEY)
-        _model = genai.GenerativeModel("gemini-1.5-flash")
+        _model = genai.GenerativeModel("gemini-2.0-flash-exp")
         logger.info("Gemini AI initialized successfully")
     else:
         logger.warning("GEMINI_API_KEY not set — AI features will use fallback")
@@ -28,25 +28,28 @@ def _build_prompt(
     conditions_str = ", ".join(known_conditions) if known_conditions else "None"
     return f"""You are a medical assistant helping rural patients in India.
 Patient language: {language}
-Patient age: {patient_age or 'Unknown'}
+Patient age: {patient_age if patient_age else 'unknown'}
 Known conditions: {conditions_str}
-Symptoms reported: {symptoms}
+Symptoms: {symptoms}
 
-Respond ONLY in valid JSON format (no markdown, no extra text):
+Respond ONLY in valid JSON, no markdown, no extra text:
 {{
-  "possible_condition": "condition name in English",
+  "possible_condition": "specific condition name in English",
   "urgency": "low|medium|high",
   "urgency_color": "green|yellow|red",
-  "advice": "practical advice in {language} language",
+  "advice": "specific practical advice in {language} language — minimum 2-3 sentences with actual steps the patient should take",
   "see_doctor_now": true or false,
   "call_emergency": true or false,
   "disclaimer": "short disclaimer in {language}"
 }}
 
 Rules:
-- urgency=high + call_emergency=true ONLY for life-threatening symptoms
-- Keep advice simple, practical, in the patient's language
-- Never diagnose definitively — always recommend doctor for anything serious"""
+- urgency=high and call_emergency=true ONLY for life-threatening symptoms like heart attack, stroke, severe bleeding, difficulty breathing
+- For heart attack symptoms: urgency=high, call_emergency=true, advice must say call 112 immediately
+- For fever: urgency=low or medium, give specific advice like rest, drink fluids, take paracetamol if above 38C
+- For nosebleed: urgency=low, advice must say pinch nose for 10 minutes, lean forward, apply cold cloth
+- advice must ALWAYS be specific and practical, never just say "consult a doctor" without real guidance
+- Respond in the patient's language ({language}) for the advice and disclaimer fields"""
 
 
 def _get_fallback_response(symptoms: str, language: str) -> dict:

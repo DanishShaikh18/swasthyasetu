@@ -31,7 +31,7 @@ export default function BookAppointment() {
     setBooking(true); setError('')
     try {
       await bookAppointment({ doctor_id: doctorId, slot_time: selected.slot_time, chief_complaint: complaint })
-      navigate('/prescriptions')
+      navigate('/appointments')
     } catch (err) {
       setError(err.response?.status === 409 ? 'Slot already taken. Please select another.' : 'Booking failed')
     } finally { setBooking(false) }

@@ -28,7 +28,13 @@ export default function MedicineSearch() {
     if (!query.trim()) return
     setLoading(true)
     try {
-      const res = await searchPharmacy({ medicine: query, lat: userLoc.lat, lng: userLoc.lng, radius_km: 50, in_stock: true })
+      const params = { medicine: query, in_stock: true }
+      if (userLoc.lat && userLoc.lng) {
+        params.lat = userLoc.lat
+        params.lng = userLoc.lng
+        params.radius_km = 50
+      }
+      const res = await searchPharmacy(params)
       setResults(res.data?.data || [])
     } catch { setResults([]) }
     finally { setLoading(false) }

@@ -12,6 +12,7 @@ client.interceptors.response.use(r => r, async err => {
 })
 export default client
 export const login = (d) => client.post('/api/v1/auth/login', d)
+export const register = (d) => client.post('/api/v1/auth/register', d)
 export const logout = () => client.post('/api/v1/auth/logout')
 export const getProfile = () => client.get('/api/v1/doctors/me/profile')
 export const updateProfile = (d) => client.patch('/api/v1/doctors/me/profile', d)

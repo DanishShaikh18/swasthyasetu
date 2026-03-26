@@ -1,6 +1,6 @@
 """AI router — symptom checker with rate limiting."""
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -23,11 +23,17 @@ def _success(data, message="Success"):
 @router.post("/symptoms")
 async def check_symptoms(
     req: SymptomCheckRequest,
+    request: Request,
     user: User = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db),
 ):
     """AI symptom checker — rate limited to 5 per user per hour."""
-    rate_key = f"rate_limit:symptoms:{str(user.id) if user else 'anonymous'}"
+    # Use user ID for authenticated users, client IP for anonymous
+    if user:
+        rate_identity = str(user.id)
+    else:
+        rate_identity = request.client.host if request.client else "unknown"
+    rate_key = f"rate_limit:symptoms:{rate_identity}"
     allowed = await check_rate_limit(rate_key, max_requests=5, window_seconds=3600)
     if not allowed:
         raise HTTPException(
