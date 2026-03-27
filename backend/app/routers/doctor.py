@@ -76,6 +76,60 @@ async def list_doctors(
 
     return _success({"items": items, "page": page, "limit": limit})
 
+@router.get("/me/slots")
+async def get_slot_templates(
+    user: User = Depends(require_role("doctor")),
+    db: AsyncSession = Depends(get_db),
+):
+    doc_result = await db.execute(
+        select(DoctorProfile).where(DoctorProfile.user_id == user.id)
+    )
+    doc = doc_result.scalar_one_or_none()
+
+    result = await db.execute(
+        select(DoctorSlot).where(DoctorSlot.doctor_id == doc.id, DoctorSlot.is_active == True)
+        .order_by(DoctorSlot.day_of_week, DoctorSlot.start_time)
+    )
+    slots = result.scalars().all()
+    return _success([{
+        "id": str(s.id),
+        "day_of_week": s.day_of_week,
+        "start_time": s.start_time.strftime("%H:%M"),
+        "end_time": s.end_time.strftime("%H:%M"),
+        "slot_duration_min": s.slot_duration_min,
+        "is_active": s.is_active,
+    } for s in slots])
+
+
+@router.post("/me/slots")
+async def create_slot_template(
+    data: SlotTemplateCreate,
+    user: User = Depends(require_role("doctor")),
+    db: AsyncSession = Depends(get_db),
+):
+    doc_result = await db.execute(
+        select(DoctorProfile).where(DoctorProfile.user_id == user.id)
+    )
+    doc = doc_result.scalar_one_or_none()
+
+    start = dt_time.fromisoformat(data.start_time)
+    end = dt_time.fromisoformat(data.end_time)
+
+    slot = DoctorSlot(
+        doctor_id=doc.id,
+        day_of_week=data.day_of_week,
+        start_time=start,
+        end_time=end,
+        slot_duration_min=data.slot_duration_min,
+    )
+    db.add(slot)
+    await db.commit()
+
+    # Generate available slots for the next 30 days
+    await _generate_slots_for_template(doc.id, slot, db)
+
+    return _success({"slot_id": str(slot.id)}, "Slot template created")
+
 
 @router.get("/{doctor_id}/slots")
 async def get_available_slots(
@@ -359,7 +413,6 @@ async def write_prescription(
             pass
 
     # Dual write in single transaction
-    async with db.begin_nested():
         rx = Prescription(
             appointment_id=data.appointment_id,
             patient_id=data.patient_id,
@@ -412,59 +465,6 @@ async def write_prescription(
     return _success({"prescription_id": str(rx.id)}, "Prescription created")
 
 
-@router.get("/me/slots")
-async def get_slot_templates(
-    user: User = Depends(require_role("doctor")),
-    db: AsyncSession = Depends(get_db),
-):
-    doc_result = await db.execute(
-        select(DoctorProfile).where(DoctorProfile.user_id == user.id)
-    )
-    doc = doc_result.scalar_one_or_none()
-
-    result = await db.execute(
-        select(DoctorSlot).where(DoctorSlot.doctor_id == doc.id, DoctorSlot.is_active == True)
-        .order_by(DoctorSlot.day_of_week, DoctorSlot.start_time)
-    )
-    slots = result.scalars().all()
-    return _success([{
-        "id": str(s.id),
-        "day_of_week": s.day_of_week,
-        "start_time": s.start_time.strftime("%H:%M"),
-        "end_time": s.end_time.strftime("%H:%M"),
-        "slot_duration_min": s.slot_duration_min,
-        "is_active": s.is_active,
-    } for s in slots])
-
-
-@router.post("/me/slots")
-async def create_slot_template(
-    data: SlotTemplateCreate,
-    user: User = Depends(require_role("doctor")),
-    db: AsyncSession = Depends(get_db),
-):
-    doc_result = await db.execute(
-        select(DoctorProfile).where(DoctorProfile.user_id == user.id)
-    )
-    doc = doc_result.scalar_one_or_none()
-
-    start = dt_time.fromisoformat(data.start_time)
-    end = dt_time.fromisoformat(data.end_time)
-
-    slot = DoctorSlot(
-        doctor_id=doc.id,
-        day_of_week=data.day_of_week,
-        start_time=start,
-        end_time=end,
-        slot_duration_min=data.slot_duration_min,
-    )
-    db.add(slot)
-    await db.commit()
-
-    # Generate available slots for the next 30 days
-    await _generate_slots_for_template(doc.id, slot, db)
-
-    return _success({"slot_id": str(slot.id)}, "Slot template created")
 
 
 async def _generate_slots_for_template(
