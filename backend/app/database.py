@@ -5,8 +5,16 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 
+
+def get_async_database_url() -> str:
+    url = settings.DATABASE_URL
+    if url.startswith("postgresql://"):
+        url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+    return url
+
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    get_async_database_url(),
     echo=settings.DEBUG,
     pool_size=20,
     max_overflow=10,
