@@ -13,12 +13,13 @@ from alembic import context
 
 config = context.config
 
+
 # Use DATABASE_URL from environment if available, fallback to alembic.ini
 database_url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+# Force asyncpg driver
+if database_url.startswith("postgresql://"):
+    database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
 config.set_main_option("sqlalchemy.url", database_url)
-
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
 
 from app.database import Base
 from app.models import *  # noqa: Import all models for metadata
