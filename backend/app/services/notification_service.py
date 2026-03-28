@@ -16,7 +16,12 @@ try:
     if settings.FIREBASE_CREDENTIALS:
         import firebase_admin
         from firebase_admin import credentials, messaging
-        cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS)
+        import json, os
+        creds_json = os.getenv("FIREBASE_CREDENTIALS_JSON")
+        if creds_json:
+            cred = credentials.Certificate(json.loads(creds_json))
+        else:
+            cred = credentials.Certificate(settings.FIREBASE_CREDENTIALS)
         firebase_admin.initialize_app(cred)
         _firebase_initialized = True
         logger.info("Firebase initialized successfully")

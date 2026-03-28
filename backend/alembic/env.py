@@ -12,6 +12,11 @@ from sqlalchemy.ext.asyncio import create_async_engine
 from alembic import context
 
 config = context.config
+
+# Use DATABASE_URL from environment if available, fallback to alembic.ini
+database_url = os.environ.get("DATABASE_URL") or config.get_main_option("sqlalchemy.url")
+config.set_main_option("sqlalchemy.url", database_url)
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 

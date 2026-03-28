@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     SUPABASE_URL: Optional[str] = None
     SUPABASE_KEY: Optional[str] = None
     FIREBASE_CREDENTIALS: Optional[str] = None
-    
+    FIREBASE_CREDENTIALS_JSON: Optional[str] = None  # add this line
     # App
     APP_NAME: str = "SwasthyaSetu API"
     APP_VERSION: str = "1.0.0"
