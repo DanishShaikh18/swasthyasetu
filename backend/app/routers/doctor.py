@@ -138,13 +138,27 @@ async def get_available_slots(
     db: AsyncSession = Depends(get_db),
 ):
     """Public — get available slots for a doctor."""
+    # Resolve doctor_id: callers may pass user_id or profile_id
+    doc_result = await db.execute(
+        select(DoctorProfile).where(DoctorProfile.id == doctor_id)
+    )
+    doc = doc_result.scalar_one_or_none()
+    if not doc:
+        doc_result = await db.execute(
+            select(DoctorProfile).where(DoctorProfile.user_id == doctor_id)
+        )
+        doc = doc_result.scalar_one_or_none()
+    if not doc:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+
+    profile_id = doc.id
     now = datetime.now(timezone.utc)
     end = now + timedelta(days=days)
 
     result = await db.execute(
         select(DoctorAvailableSlot)
         .where(
-            DoctorAvailableSlot.doctor_id == doctor_id,
+            DoctorAvailableSlot.doctor_id == profile_id,
             DoctorAvailableSlot.slot_time >= now,
             DoctorAvailableSlot.slot_time <= end,
             DoctorAvailableSlot.status == "available",
@@ -413,37 +427,37 @@ async def write_prescription(
             pass
 
     # Dual write in single transaction
-        rx = Prescription(
-            appointment_id=data.appointment_id,
-            patient_id=data.patient_id,
-            doctor_id=doc.id,
-            diagnosis=data.diagnosis,
-            medicines=data.medicines,
-            advice=data.advice,
-            follow_up_date=follow_up,
-        )
-        db.add(rx)
-        await db.flush()
+    rx = Prescription(
+        appointment_id=data.appointment_id,
+        patient_id=data.patient_id,
+        doctor_id=doc.id,
+        diagnosis=data.diagnosis,
+        medicines=data.medicines,
+        advice=data.advice,
+        follow_up_date=follow_up,
+    )
+    db.add(rx)
+    await db.flush()
 
-        for med in data.medicines:
-            item = PrescriptionItem(
-                prescription_id=rx.id,
-                medicine_name=med.get("name", ""),
-                generic_name=med.get("generic_name"),
-                dosage=med.get("dosage"),
-                frequency=med.get("frequency"),
-                duration_days=med.get("duration_days"),
-                instructions=med.get("instructions"),
-            )
-            db.add(item)
-
-        # Audit log
-        audit = AuditLog(
-            actor_id=user.id, actor_role="doctor",
-            action="WRITE_PRESCRIPTION", resource_type="prescription",
-            resource_id=rx.id,
+    for med in data.medicines:
+        item = PrescriptionItem(
+            prescription_id=rx.id,
+            medicine_name=med.get("name", ""),
+            generic_name=med.get("generic_name"),
+            dosage=med.get("dosage"),
+            frequency=med.get("frequency"),
+            duration_days=med.get("duration_days"),
+            instructions=med.get("instructions"),
         )
-        db.add(audit)
+        db.add(item)
+
+    # Audit log
+    audit = AuditLog(
+        actor_id=user.id, actor_role="doctor",
+        action="WRITE_PRESCRIPTION", resource_type="prescription",
+        resource_id=rx.id,
+    )
+    db.add(audit)
 
     await db.commit()
 

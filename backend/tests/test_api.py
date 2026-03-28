@@ -92,12 +92,12 @@ class TestAuthRegister:
 
     def test_register_patient(self):
         r = httpx.post(f"{BASE_URL}/api/v1/auth/register", json={
-            "email": "aarav.sharma.test2026@gmail.com",
-            "phone": "9810001122",
-            "password": "Test@1234",
-            "full_name": "Aarav Sharma",
+            "email": "vivaan.kapoor.test7781@gmail.com",
+            "phone": "9700011122",
+            "password": "Test@5678",
+            "full_name": "Vivaan Kapoor",
             "role": "patient",
-            "preferred_language": "hi",
+            "preferred_language": "en",
         })
         assert r.status_code == 200, r.text
 
@@ -109,19 +109,19 @@ class TestAuthRegister:
 
     def test_register_doctor(self):
         r = httpx.post(f"{BASE_URL}/api/v1/auth/register", json={
-            "email": "dr.kavya.nair.test2026@gmail.com",
-            "phone": "9810002233",
-            "password": "Test@1234",
-            "full_name": "Dr. Kavya Nair",
+            "email": "dr.riddhi.shah.test7781@gmail.com",
+            "phone": "9700022233",
+            "password": "Test@5678",
+            "full_name": "Dr. Riddhi Shah",
             "role": "doctor",
             "preferred_language": "en",
             "specialization": "General Physician",
             "qualification": "MBBS MD",
-            "registration_number": "MH2026-77889",
-            "experience_years": 11,
-            "hospital_name": "Sunrise Health Clinic",
-            "bio": "Focused on preventive healthcare and rural outreach",
-            "languages_spoken": ["English", "Hindi", "Malayalam"],
+            "registration_number": "GJ2026-99123",
+            "experience_years": 8,
+            "hospital_name": "Harmony Care Hospital",
+            "bio": "Committed to holistic and preventive patient care",
+            "languages_spoken": ["English", "Hindi", "Gujarati"],
         })
         assert r.status_code == 200, r.text
 
@@ -133,21 +133,21 @@ class TestAuthRegister:
 
     def test_register_pharmacy(self):
         r = httpx.post(f"{BASE_URL}/api/v1/auth/register", json={
-            "email": "raj.medicals.test2026@gmail.com",
-            "phone": "9810003344",
-            "password": "Test@1234",
-            "full_name": "Rajesh Patel",
+            "email": "om.pharmacy.test7781@gmail.com",
+            "phone": "9700033344",
+            "password": "Test@5678",
+            "full_name": "Om Prakash Yadav",
             "role": "pharmacy",
             "preferred_language": "hi",
-            "pharmacy_name": "Raj Medical Store",
-            "license_number": "GJ-PHARM-2026-5566",
-            "address": "Main Road, Near Bus Stand",
-            "village": "Surat",
-            "district": "Surat",
-            "state": "Gujarat",
-            "latitude": 21.1702,
-            "longitude": 72.8311,
-            "pharmacy_phone": "9810003344",
+            "pharmacy_name": "Om Sai Medicals",
+            "license_number": "MH-PHARM-2026-8822",
+            "address": "Station Road, Opp City Mall",
+            "village": "Nagpur",
+            "district": "Nagpur",
+            "state": "Maharashtra",
+            "latitude": 21.1458,
+            "longitude": 79.0882,
+            "pharmacy_phone": "9700033344",
         })
         assert r.status_code == 200, r.text
 
@@ -166,8 +166,8 @@ class TestAuthLogin:
 
     def test_login_patient(self):
         r = httpx.post(f"{BASE_URL}/api/v1/auth/login", json={
-            "email": "aarav.sharma.test2026@gmail.com",
-            "password": "Test@1234",
+            "email": "vivaan.kapoor.test7781@gmail.com",
+            "password": "Test@5678",
         })
         assert r.status_code == 200, r.text
 
@@ -181,8 +181,8 @@ class TestAuthLogin:
 
     def test_login_doctor(self):
         r = httpx.post(f"{BASE_URL}/api/v1/auth/login", json={
-            "email": "dr.kavya.nair.test2026@gmail.com",
-            "password": "Test@1234",
+            "email": "dr.riddhi.shah.test7781@gmail.com",
+            "password": "Test@5678",
         })
         assert r.status_code == 200, r.text
 
@@ -196,8 +196,8 @@ class TestAuthLogin:
 
     def test_login_pharmacy(self):
         r = httpx.post(f"{BASE_URL}/api/v1/auth/login", json={
-            "email": "raj.medicals.test2026@gmail.com",
-            "password": "Test@1234",
+            "email": "om.pharmacy.test7781@gmail.com",
+            "password": "Test@5678",
         })
         assert r.status_code == 200, r.text
 
@@ -208,6 +208,7 @@ class TestAuthLogin:
             state["pharmacy_id"] = data.get("user_id")
 
         print("✅ Pharmacy login OK")
+
 
     def test_login_admin(self):
         r = httpx.post(f"{BASE_URL}/api/v1/auth/login", json={

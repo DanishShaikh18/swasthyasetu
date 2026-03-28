@@ -192,11 +192,16 @@ async def book_appointment(
     if not profile:
         raise HTTPException(status_code=404, detail="Patient profile not found")
 
-    # Check doctor exists and is approved
+    # Check doctor exists and is approved (caller may pass user_id or profile_id)
     doc_result = await db.execute(
         select(DoctorProfile).where(DoctorProfile.id == data.doctor_id)
     )
     doctor = doc_result.scalar_one_or_none()
+    if not doctor:
+        doc_result = await db.execute(
+            select(DoctorProfile).where(DoctorProfile.user_id == data.doctor_id)
+        )
+        doctor = doc_result.scalar_one_or_none()
     if not doctor or not doctor.is_approved:
         raise HTTPException(status_code=404, detail="Doctor not found or not approved")
 
@@ -206,7 +211,7 @@ async def book_appointment(
 
     result = await db.execute(
         select(DoctorAvailableSlot).where(
-            DoctorAvailableSlot.doctor_id == data.doctor_id,
+            DoctorAvailableSlot.doctor_id == doctor.id,
             DoctorAvailableSlot.slot_time == data.slot_time,
             DoctorAvailableSlot.status == "available",
         )
@@ -218,7 +223,7 @@ async def book_appointment(
     # Create appointment
     appointment = Appointment(
         patient_id=profile.id,
-        doctor_id=data.doctor_id,
+        doctor_id=doctor.id,
         scheduled_at=data.slot_time,
         type=data.type,
         chief_complaint=data.chief_complaint,
