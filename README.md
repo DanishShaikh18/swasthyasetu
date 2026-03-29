@@ -4,8 +4,24 @@
 
 ---
 
-## Architecture
+## 🚀 Live Demo
 
+**Backend API:** https://swasthyasetu-production.up.railway.app/docs
+
+### Test Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Doctor | rajesh.sharma@ss.dev | doctor123 |
+| Doctor | priya.deshmukh@ss.dev | doctor123 |
+| Patient | ramesh.p@ss.dev | patient123 |
+| Patient | priyanka.p@ss.dev | patient123 |
+| Pharmacy | sharma.meds@ss.dev | pharmacy123 |
+| Pharmacy | deshmukh.pharma@ss.dev | pharmacy123 |
+
+---
+
+## Architecture
 ```
 swasthyasetu/
 ├── backend/              # FastAPI (Python 3.11+)
@@ -16,7 +32,7 @@ swasthyasetu/
 │   │   ├── dependencies.py # Auth, rate limiting, Redis
 │   │   ├── models/       # 13 SQLAlchemy models
 │   │   ├── schemas/      # 6 Pydantic schema files
-│   │   ├── routers/      # 7 API routers (33 endpoints)
+│   │   ├── routers/      # 8 API routers (44 endpoints)
 │   │   └── services/     # 5 services (auth, AI, video, notification, storage)
 │   ├── alembic/          # Database migrations
 │   ├── seed/             # 4 seed data scripts
@@ -36,8 +52,8 @@ swasthyasetu/
 | Layer | Technology |
 |-------|-----------|
 | Backend | FastAPI, SQLAlchemy 2.0 (async), Pydantic v2 |
-| Database | PostgreSQL 15 + PostGIS (geospatial) |
-| Cache | Redis 7 |
+| Database | PostgreSQL 15 + PostGIS (geospatial) via Supabase |
+| Cache | Redis 7 via Railway |
 | Auth | JWT (access + refresh tokens), bcrypt |
 | AI | Google Gemini Flash API |
 | Video | Daily.co |
@@ -46,6 +62,9 @@ swasthyasetu/
 | Frontend | React 18, Vite, Tailwind CSS v4, Zustand |
 | i18n | 10 Indian languages (hi, en, ta, te, mr, gu, kn, ml, pa, or) |
 | Offline | PWA + IndexedDB + Service Worker |
+| Hosting | Railway (backend + Redis), Supabase (PostgreSQL + PostGIS) |
+
+---
 
 ## Quick Start
 
@@ -55,7 +74,6 @@ swasthyasetu/
 - Python 3.11+
 
 ### 1. Clone & Configure
-
 ```bash
 cd swasthyasetu
 cp backend/.env.example backend/.env
@@ -63,7 +81,6 @@ cp backend/.env.example backend/.env
 ```
 
 ### 2. Start Backend (Docker)
-
 ```bash
 docker-compose up -d
 # This starts PostgreSQL + PostGIS, Redis, and the FastAPI backend
@@ -72,7 +89,6 @@ docker-compose up -d
 ```
 
 ### 3. Start Frontends
-
 ```bash
 # Patient App (port 5173)
 cd patient-app && npm install && npm run dev
@@ -85,9 +101,7 @@ cd pharmacy-portal && npm install && npm run dev
 ```
 
 ### Without Docker (manual)
-
 ```bash
-# Install PostGIS and Redis locally, then:
 cd backend
 pip install -r requirements.txt
 alembic upgrade head
@@ -98,7 +112,9 @@ python -m seed.seed_patients
 uvicorn app.main:app --reload
 ```
 
-## API Endpoints (33 total)
+---
+
+## API Endpoints (44 total)
 
 ### Auth (`/api/v1/auth`)
 | Method | Path | Description |
@@ -123,13 +139,13 @@ uvicorn app.main:app --reload
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | / | Public doctor listing (filterable) |
-| GET | /{id}/slots | Available slots for next N days |
+| GET | /{doctor_id}/slots | Available slots for next N days |
 | GET | /me/profile | Doctor profile |
 | PATCH | /me/profile | Update profile |
 | PATCH | /me/availability | Toggle online/offline |
 | GET | /me/appointments | Appointments (filterable by status) |
-| PATCH | /me/appointments/{id} | Accept/reject/complete |
-| GET | /me/patients/{id} | View patient record (audit logged) |
+| PATCH | /me/appointments/{appointment_id} | Accept/reject/complete |
+| GET | /me/patients/{patient_id} | View patient record (audit logged) |
 | POST | /me/prescriptions | Write prescription (dual-write) |
 | GET | /me/slots | Slot templates |
 | POST | /me/slots | Create slot template, auto-generates bookable slots |
@@ -143,13 +159,18 @@ uvicorn app.main:app --reload
 | PATCH | /me/status | Toggle open/closed |
 | GET | /me/inventory | Search inventory |
 | POST | /me/inventory | Add medicine |
-| PATCH | /me/inventory/{id} | Update medicine |
+| PATCH | /me/inventory/{item_id} | Update medicine |
 | POST | /me/inventory/bulk | CSV bulk upload |
+
+### Appointments (`/api/v1/appointments`)
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | /{appointment_id}/join | Generate video call token (never stored) |
 
 ### AI (`/api/v1/ai`)
 | Method | Path | Description |
 |--------|------|-------------|
-| POST | /symptoms | AI symptom checker (rate limited) |
+| POST | /symptoms | AI symptom checker (rate limited 5/user/hour) |
 
 ### Content (`/api/v1/content`)
 | Method | Path | Description |
@@ -158,23 +179,36 @@ uvicorn app.main:app --reload
 | GET | /first-aid | First aid cards (cached 7d) |
 | GET | /health-facts | Health facts (cached 6h) |
 | GET | /notifications/me | User notifications |
-| PATCH | /notifications/{id}/read | Mark notification read |
+| PATCH | /notifications/{notification_id}/read | Mark notification read |
 
-### Appointments (`/api/v1/appointments`)
+### Admin (`/api/v1/admin`)
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | /{id}/join | Generate video call token (never stored) |
+| GET | /doctors/pending | List pending doctor approvals |
+| POST | /doctors/{doctor_profile_id}/approve | Approve doctor |
+| POST | /doctors/{doctor_profile_id}/reject | Reject doctor |
+| GET | /pharmacy/pending | List pending pharmacy approvals |
+| POST | /pharmacy/{pharmacy_profile_id}/approve | Approve pharmacy |
+| POST | /pharmacy/{pharmacy_profile_id}/reject | Reject pharmacy |
 
-## Test Credentials
+### General
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | / | API info |
+| GET | /health | Health check (DB + Redis status) |
 
-| Role | Email | Password |
-|------|-------|----------|
-| Doctor | rajesh.sharma@ss.dev | doctor123 |
-| Doctor | priya.deshmukh@ss.dev | doctor123 |
-| Patient | ramesh.p@ss.dev | patient123 |
-| Patient | priyanka.p@ss.dev | patient123 |
-| Pharmacy | sharma.meds@ss.dev | pharmacy123 |
-| Pharmacy | deshmukh.pharma@ss.dev | pharmacy123 |
+---
+
+## Seed Data
+
+| Data | Count | Details |
+|------|-------|---------|
+| Doctors | 20 | 8 specializations across 10 Indian states |
+| Pharmacies | 15 | Real GPS coordinates, 40+ medicines each |
+| Patients | 10 | With appointments and prescriptions |
+| Health Content | 38 | First aid, daily tips, nutrition, seasonal alerts (Hindi + English) |
+
+---
 
 ## External API Keys (Optional)
 
@@ -185,16 +219,9 @@ All external services degrade gracefully when keys are missing:
 | Gemini AI | `GEMINI_API_KEY` | Returns general health advice |
 | Daily.co | `DAILY_API_KEY` | Mock video tokens |
 | Supabase | `SUPABASE_URL` + `SUPABASE_KEY` | Mock upload URLs |
-| Firebase | `FIREBASE_CREDENTIALS` | Notifications logged only |
+| Firebase | `FIREBASE_CREDENTIALS_JSON` | Notifications logged only |
 
-## Seed Data
-
-| Data | Count | Details |
-|------|-------|---------|
-| Doctors | 20 | 8 specializations across 10 Indian states |
-| Pharmacies | 15 | Real GPS coordinates, 40+ medicines each |
-| Patients | 10 | With appointments and prescriptions |
-| Health Content | 38 | First aid, daily tips, nutrition, seasonal alerts (Hindi + English) |
+---
 
 ## Design Decisions
 
@@ -207,6 +234,8 @@ All external services degrade gracefully when keys are missing:
 - **PostGIS**: Real geospatial pharmacy search within configurable radius
 - **10 Indian languages**: Full translations for Hindi/English, core translations for 8 more
 - **PWA**: Patient app works offline with IndexedDB caching
+
+---
 
 ## License
 
