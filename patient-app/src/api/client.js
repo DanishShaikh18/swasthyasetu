@@ -3,7 +3,7 @@ import useAuthStore from '../store/authStore'
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
-const client = axios.create({ baseURL: API_URL, withCredentials: true })
+const client = axios.create({ baseURL: API_URL })
 
 client.interceptors.request.use((config) => {
   const token = useAuthStore.getState().accessToken
@@ -17,7 +17,8 @@ client.interceptors.response.use(
     if (err.response?.status === 401 && !err.config._retry) {
       err.config._retry = true
       try {
-        const res = await axios.post(`${API_URL}/api/v1/auth/refresh`, {}, { withCredentials: true })
+        const rt = useAuthStore.getState().refreshToken
+        const res = await axios.post(`${API_URL}/api/v1/auth/refresh`, { refresh_token: rt })
         const newToken = res.data?.data?.access_token
         if (newToken) {
           useAuthStore.getState().setToken(newToken)

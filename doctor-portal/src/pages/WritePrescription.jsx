@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { writePrescription } from '../api'
 
 export default function WritePrescription() {
   const { appointmentId } = useParams()
+  const [searchParams] = useSearchParams()
+  const patientId = searchParams.get('patient_id')
   const navigate = useNavigate()
   const [diagnosis, setDiagnosis] = useState('')
   const [advice, setAdvice] = useState('')
@@ -21,7 +23,7 @@ export default function WritePrescription() {
     setLoading(true); setError('')
     try {
       await writePrescription({
-        appointment_id: appointmentId, diagnosis, advice,
+        appointment_id: appointmentId, patient_id: patientId, diagnosis, advice,
         follow_up_date: followUp || null,
         medicines: medicines.filter(m => m.name.trim()),
       })

@@ -1,12 +1,12 @@
 import axios from 'axios'
 import useAuthStore from "./store/authStore";
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
-const client = axios.create({ baseURL: API, withCredentials: true })
+const client = axios.create({ baseURL: API })
 client.interceptors.request.use(c => { const t = useAuthStore.getState().accessToken; if (t) c.headers.Authorization = `Bearer ${t}`; return c })
 client.interceptors.response.use(r => r, async err => {
   if (err.response?.status === 401 && !err.config._retry) {
     err.config._retry = true
-    try { const r = await axios.post(`${API}/api/v1/auth/refresh`, {}, { withCredentials: true }); const nt = r.data?.data?.access_token; if (nt) { useAuthStore.getState().setToken(nt); err.config.headers.Authorization = `Bearer ${nt}`; return client(err.config) } } catch { useAuthStore.getState().logout(); window.location.href = '/login' }
+    try { const rt = useAuthStore.getState().refreshToken; const r = await axios.post(`${API}/api/v1/auth/refresh`, { refresh_token: rt }); const nt = r.data?.data?.access_token; if (nt) { useAuthStore.getState().setToken(nt); err.config.headers.Authorization = `Bearer ${nt}`; return client(err.config) } } catch { useAuthStore.getState().logout(); window.location.href = '/login' }
   }
   return Promise.reject(err)
 })

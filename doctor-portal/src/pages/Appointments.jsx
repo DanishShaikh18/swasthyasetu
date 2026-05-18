@@ -74,7 +74,7 @@ export default function Appointments() {
                 )}
                 <button onClick={() => navigate(`/patient/${a.patient_id}`)} className="px-3 py-2 bg-primary-light text-primary rounded-xl text-sm min-h-[40px]">View Patient</button>
                 {a.status === 'confirmed' && (
-                  <button onClick={() => navigate(`/prescribe/${a.id}`)} className="px-3 py-2 bg-surface border border-primary text-primary rounded-xl text-sm min-h-[40px]">Write Rx</button>
+                  <button onClick={() => navigate(`/prescribe/${a.id}?patient_id=${a.patient_id}`)} className="px-3 py-2 bg-surface border border-primary text-primary rounded-xl text-sm min-h-[40px]">Write Rx</button>
                 )}
               </div>
             </div>

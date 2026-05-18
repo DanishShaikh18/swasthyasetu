@@ -9,7 +9,10 @@ export default function PatientView() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    getPatientRecord(patientId).then(r => setPatient(r.data?.data)).catch(() => {}).finally(() => setLoading(false))
+    getPatientRecord(patientId).then(r => {
+      const d = r.data?.data
+      setPatient({ ...d?.patient, prescriptions: d?.prescriptions || [] })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [patientId])
 
   if (loading) return <div className="p-6"><div className="h-40 bg-gray-100 rounded-2xl animate-pulse" /></div>
