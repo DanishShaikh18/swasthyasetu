@@ -88,17 +88,32 @@ docker-compose up -d
 # API docs: http://localhost:8000/docs
 ```
 
-### 3. Start Frontends
+### 3. Start Frontend
+
+We have configured the application to run the patient and doctor portals on separate ports using the exact same codebase, ensuring minimal changes and no code duplication.
+
 ```bash
-# Patient App (port 5173)
-cd patient-app && npm install && npm run dev
-
-# Doctor Portal (port 5174)
-cd doctor-portal && npm install && npm run dev
-
-# Pharmacy Portal (port 5175)
-cd pharmacy-portal && npm install && npm run dev
+# Start the Patient Portal (port 5173)
+cd frontend
+npm install
+npm run dev:patient
 ```
+
+```bash
+# In a separate terminal, start the Doctor Portal (port 5174)
+cd frontend
+npm run dev:doctor
+```
+
+Once running:
+- **Patient Portal**: `http://localhost:5173`
+- **Doctor Portal**: `http://localhost:5174`
+- **Patient Portal**: Login or register as a Patient.
+- **Doctor Portal**: Login or register as a Doctor.
+
+**Test Credentials:**
+- Patient: `ramesh.p@ss.dev` / `patient123`
+- Doctor: `rajesh.sharma@ss.dev` / `doctor123`
 
 ### Without Docker (manual)
 ```bash

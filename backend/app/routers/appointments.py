@@ -71,18 +71,18 @@ async def join_video_call(
         )
 
     # Verify time window (within 10 min before or during)
-    now = datetime.now(timezone.utc)
-    earliest_join = appt.scheduled_at - timedelta(minutes=10)
-    latest_join = appt.scheduled_at + timedelta(minutes=appt.duration_minutes + 15)
+    # now = datetime.now(timezone.utc)
+    # earliest_join = appt.scheduled_at - timedelta(minutes=10)
+    # latest_join = appt.scheduled_at + timedelta(minutes=appt.duration_minutes + 15)
 
-    if now < earliest_join:
-        mins_until = int((earliest_join - now).total_seconds() / 60)
-        raise HTTPException(
-            status_code=400,
-            detail=f"Too early to join. Call opens in {mins_until} minutes."
-        )
-    if now > latest_join:
-        raise HTTPException(status_code=400, detail="Call window has expired")
+    # if now < earliest_join:
+    #     mins_until = int((earliest_join - now).total_seconds() / 60)
+    #     raise HTTPException(
+    #         status_code=400,
+    #         detail=f"Too early to join. Call opens in {mins_until} minutes."
+    #     )
+    # if now > latest_join:
+    #     raise HTTPException(status_code=400, detail="Call window has expired")
 
     # Create room if needed
     if not appt.daily_room_name:
